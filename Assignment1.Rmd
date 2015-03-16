@@ -1,0 +1,20 @@
+---
+title: 'Assignment 1: Motor Trend report'
+author: "C. Deramond"
+date: "March, 2015"
+output: pdf_document
+---
+# Executive summary
+
+lalala
+
+# Introduction
+
+In this report we'll study the relationship between MPG and several features of vehicles. By the end of this study we hope to have answered these two questions:
+1. **“Is an automatic or manual transmission better for MPG”**
+2. **"Quantify the MPG difference between automatic and manual transmissions"**
+
+All the data used in this report comes from `mtcars` dataset available on R datasets package.
+
+
+

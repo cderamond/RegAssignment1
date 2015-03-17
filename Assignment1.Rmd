@@ -2,7 +2,10 @@
 title: 'Assignment 1: Motor Trend report'
 author: "C. Deramond"
 date: "March, 2015"
-output: pdf_document
+output:
+  html_document:
+    highlight: pygments
+    theme: flatly
 ---
 # Executive summary
 
@@ -11,10 +14,72 @@ lalala
 # Introduction
 
 In this report we'll study the relationship between MPG and several features of vehicles. By the end of this study we hope to have answered these two questions:
-1. **“Is an automatic or manual transmission better for MPG”**
-2. **"Quantify the MPG difference between automatic and manual transmissions"**
+
+1. *“Is an automatic or manual transmission better for MPG”*
+
+2. *"Quantify the MPG difference between automatic and manual transmissions"*
 
 All the data used in this report comes from `mtcars` dataset available on R datasets package.
+
+# Analysis
+
+## Exploratory
+
+```{r, echo=FALSE, results='hide', cache=TRUE}
+library(datasets)
+library(ggplot2)
+library(GGally)
+tol_cor <- .55
+
+yvx <- cor(mtcars)[1,]
+selSet <- names(yvx[ which(abs(yvx) > tol_cor)]) # we will include only the ones with |cor| > .55
+data<- mtcars[,selSet]
+
+##grafico de pares
+pairsXY <- ggpairs(
+                data,
+                title = "Y vs X, scatter matrix",
+                upper = list(continuous = "cor"),
+                lower = list(continuous = "smooth", 
+                             params = c(method = "lm", fill = "red"))
+)
+##grafico de corr
+corXY <- ggcorr(data) #+ ggtitle("Correlation matrix")
+##
+
+```
+
+We'll start the process by discarding all variables which have a lower than `r tol_cor` correlation with our output `mpg`. This process lefts us with `r length(selSet) - 1` variables. Time to look for multicolinearity:
+
+If you see [Graph 01](#g01), the risk for muticolinearity (i.e. our predictor are not independent among each other) is high.
+
+
+## Regression
+
+
+### Goodness of fit
+
+
+# Results
+
+
+
+# Appendix
+
+
+<a name="g01"></a>**Graph 1: Correlation matrix**
+
+```{r, echo=FALSE}
+print(corXY)
+
+```
+
+<a name="g02"></a>**Graph 2: Scatter matrix, all variables**
+
+```{r, echo=FALSE, cache=TRUE}
+print(pairsXY)
+
+```
 
 
 

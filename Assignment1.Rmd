@@ -49,9 +49,23 @@ corXY <- ggcorr(data) #+ ggtitle("Correlation matrix")
 
 ```
 
-We'll start the process by discarding all variables which have a lower than `r tol_cor` correlation with our output `mpg`. This process lefts us with `r length(selSet) - 1` variables. Time to look for multicolinearity:
+We'll start the process by discarding all variables which have a lower than `r tol_cor` correlation with our output `mpg`. This process lefts us with `r length(selSet) - 1` variables. 
 
-If you see [Graph 01](#g01), the risk for muticolinearity (i.e. our predictor are not independent among each other) is high.
+A quick [scatter matrix](#g01) shows many interesting relationships that we should address:
+
+        - `cil, vs, am` are discrete variable variables. Of this 3 vs will be taken out inmediately, as it has low explanatory interest.
+        
+        - 
+        
+```{r}
+data <- data[,-7] #remove vs
+
+```
+
+
+Time to look for multicolinearity:
+
+If you see [Graph 02](#g02), the risk for muticolinearity (i.e. our predictor are not independent among each other) is high.
 
 
 ## Regression
@@ -67,17 +81,17 @@ If you see [Graph 01](#g01), the risk for muticolinearity (i.e. our predictor ar
 # Appendix
 
 
-<a name="g01"></a>**Graph 1: Correlation matrix**
-
-```{r, echo=FALSE}
-print(corXY)
-
-```
-
-<a name="g02"></a>**Graph 2: Scatter matrix, all variables**
+<a name="g02"></a>**Graph 1: Scatter matrix, all variables**
 
 ```{r, echo=FALSE, cache=TRUE}
 print(pairsXY)
+
+```
+
+<a name="g01"></a>**Graph 2: Correlation matrix**
+
+```{r, echo=FALSE}
+print(corXY)
 
 ```
 

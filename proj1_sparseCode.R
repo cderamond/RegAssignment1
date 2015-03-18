@@ -27,6 +27,9 @@ data$am_f <- as.factor(data$am)
 
 
 ##
+source("./myplclust.R")
+d <- dist(data)
+clust <- hclust(d)
+myplclust(clust,lab.col=data$am)
 
-ggcorr(data[,-1])
-
+svd1 <- svd(data)

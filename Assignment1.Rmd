@@ -25,7 +25,7 @@ All the data used in this report comes from `mtcars` dataset available on R data
 
 ## Exploratory
 
-```{r, echo=FALSE, results='hide', cache=TRUE}
+```{r , echo=FALSE, results='hide', cache=TRUE}
 library(datasets)
 library(ggplot2)
 library(GGally)
@@ -53,14 +53,35 @@ We'll start the process by discarding all variables which have a lower than `r t
 
 A quick [scatter matrix](#g01) shows many interesting relationships that we should address:
 
-        - `cil, vs, am` are discrete variable variables. Of this 3 vs will be taken out inmediately, as it has low explanatory interest.
-        
-        - 
-        
-```{r}
-data <- data[,-7] #remove vs
+- ` cil, vs, am ` are discrete variable variables. We take out `vs` as it is of low interest.
+```{r, echo=FALSE}
+data<- data[,-7]
 
 ```
+
+        
+- the correlation within the predictors is quite high, so risk of multicollinearity is there.
+
+```{r svdChunk, echo=FALSE, cache=TRUE}
+# svd
+svd1 <- svd(scale(data[,-1])) #no need for Y on this
+# get 3 top contributor
+top3Contrib <- sort(abs(svd1$v[,2]), 
+                    decreasing = T, 
+                    index.return=T)$ix [1:3] +1  #straight from EDA class, we take 3 top contributors, we add one as we removed originally the Y variabl
+## we now know that by taking the top 3 contributor we should explain pVarEx %
+pVarEx <- sum((svd1$d^2/sum(svd1$d^2))[1:3]) #round it to 2 decimals *100 
+```
+
+A second, more refined approach, singular value decomposition: by merely taking 3 variables we ought to explain **`r paste(round(pVarEx*100,1),"%")`** of the variation. The variables that will make it to the linear model are:
+
+```{r, echo=FALSE}
+names(data[, top3Contrib])
+fdata <- data[, c(1,top3Contrib)]
+```
+
+
+
 
 
 Time to look for multicolinearity:
@@ -81,17 +102,28 @@ If you see [Graph 02](#g02), the risk for muticolinearity (i.e. our predictor ar
 # Appendix
 
 
-<a name="g02"></a>**Graph 1: Scatter matrix, all variables**
+<a name="g01"></a>**Graph 1: Scatter matrix, all variables**
 
 ```{r, echo=FALSE, cache=TRUE}
 print(pairsXY)
 
 ```
 
-<a name="g01"></a>**Graph 2: Correlation matrix**
+<a name="g02"></a>**Graph 2: Correlation matrix**
 
 ```{r, echo=FALSE}
 print(corXY)
+
+```
+
+<a name="g03"></a>**Graph 3: Singular value decomposition, Variance explained**
+
+```{r, dependson="svdChunk", echo=FALSE}
+# graph for % of variation explained
+par(mfrow = c(1, 2))
+plot(svd1$d, xlab = "Column", ylab = "Singular value", pch = 19)
+plot(svd1$d^2/sum(svd1$d^2), xlab = "Column", ylab = "Prop. of variance explained", 
+     pch = 19)
 
 ```
 

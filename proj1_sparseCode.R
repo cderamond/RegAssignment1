@@ -58,4 +58,9 @@ pVarEx <- sum((svd1$d^2/sum(svd1$d^2))[1:3]) #round it to 2 decimals *100
 kClust <- kmeans(data[,-1],centers=2, nstart = 10)
 table(kClust$cluster,data$am)
 
+## model fit
+fdata$am <- as.factor(fdata$am)
+fit <- lm(mpg ~., data = fdata)
+summary(fit)
+
 

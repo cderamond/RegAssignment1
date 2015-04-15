@@ -3,13 +3,17 @@ title: 'Assignment 1: Motor Trend report'
 author: "C. Deramond"
 date: "March, 2015"
 output:
+  pdf_document: default
   html_document:
     highlight: pygments
     theme: flatly
 ---
 # Executive summary
 
-lalala
+In this document we explored car performance in terms of miles per gallon (mpg). By methods of regression, we conclude that manual transmission will give better performance in a boost of app 1.8 MPG, ceteris paribus.
+
+Alas the question are answered by the model in a pretty straightforward way. In the following sections you may review the procedure as well as the validations of the model.
+
 
 # Introduction
 
@@ -25,15 +29,17 @@ All the data used in this report comes from `mtcars` dataset available on R data
 
 ## Exploratory
 
-```{r , echo=FALSE, results='hide', cache=TRUE}
+```{r chunkLoad, echo=FALSE, results='hide', cache=TRUE}
 library(datasets)
 library(ggplot2)
 library(GGally)
+library(car)
 tol_cor <- .55
 
 yvx <- cor(mtcars)[1,]
 selSet <- names(yvx[ which(abs(yvx) > tol_cor)]) # we will include only the ones with |cor| > .55
 data<- mtcars[,selSet]
+#data$PWratio <- data$hp/data$wt
 
 ##grafico de pares
 pairsXY <- ggpairs(
@@ -49,54 +55,84 @@ corXY <- ggcorr(data) #+ ggtitle("Correlation matrix")
 
 ```
 
-We'll start the process by discarding all variables which have a lower than `r tol_cor` correlation with our output `mpg`. This process lefts us with `r length(selSet) - 1` variables. 
+We'll start the process by discarding all variables which have a lower than `r tol_cor` correlation with our output `mpg`. This process lefts us with `r length(selSet) - 1` variables.
 
 A quick [scatter matrix](#g01) shows many interesting relationships that we should address:
 
-- ` cil, vs, am ` are discrete variable variables. We take out `vs` as it is of low interest.
-```{r, echo=FALSE}
+- ` cyl, vs, am ` are discrete variable variables. We take out `vs` as it is of low interest. And turn the rest into factor
+```{r chunkTransforms, echo=FALSE}
 data<- data[,-7]
+data$am <- factor(data$am, labels = c("Auto", "Manual"))
+data$cyl <- factor(data$cyl)
+
 
 ```
 
         
 - the correlation within the predictors is quite high, so risk of multicollinearity is there.
 
-```{r svdChunk, echo=FALSE, cache=TRUE}
-# svd
-svd1 <- svd(scale(data[,-1])) #no need for Y on this
-# get 3 top contributor
-top3Contrib <- sort(abs(svd1$v[,2]), 
-                    decreasing = T, 
-                    index.return=T)$ix [1:3] +1  #straight from EDA class, we take 3 top contributors, we add one as we removed originally the Y variabl
-## we now know that by taking the top 3 contributor we should explain pVarEx %
-pVarEx <- sum((svd1$d^2/sum(svd1$d^2))[1:3]) #round it to 2 decimals *100 
-```
-
-A second, more refined approach, singular value decomposition: by merely taking 3 variables we ought to explain **`r paste(round(pVarEx*100,1),"%")`** of the variation. The variables that will make it to the linear model are:
-
-```{r, echo=FALSE}
-names(data[, top3Contrib])
-fdata <- data[, c(1,top3Contrib)]
-```
-
-
-
-
-
-Time to look for multicolinearity:
-
-If you see [Graph 02](#g02), the risk for muticolinearity (i.e. our predictor are not independent among each other) is high.
+If you see [Graph 02](#g02), the risk for muticolinearity (i.e. our predictors are not independent among each other) is high.
 
 
 ## Regression
 
+```{r chunkRegs, echo=FALSE, results='hide'}
+fit_full <- lm(mpg ~ ., data = data)
+fit_sw <- step(fit_full)
 
-### Goodness of fit
+#cyl +hp+wt+am
+fit1 <- update(fit_full, formula. = mpg ~ am)
+fit2 <- update(fit_full, formula. = mpg ~ am + cyl )
+fit3 <- update(fit_full, formula. = mpg ~ am + cyl + hp)
+fit4 <- update(fit_full, formula. = mpg ~ am + cyl + hp + wt + interaction(cyl, am))
+
+```
+
+As starting point, let's consider the suggested model by stepwise: **`r as.character(fit_sw$call[2])`**  
+
+As we are including 2 factors, interaction will be considered [see interaction plot](#g03). A second look at the ANOVA table, tells that interaction is not significant:
+
+```{r, echo=FALSE}
+anova(fit4)
+fit4 <- update(fit4, .~.-interaction(cyl, am))
+#fit4_inter <- update(fit_full, formula. = mpg ~ cyl + hp + wt + am + interaction(cyl, am))
+
+```
+
+We rerun model without interaction, thus suggesting using manual transmission has a gain of `r round(fit4$coefficients[2],2)` in mpg, which makes sense. Time to evaluate our model.
+
+```{r echo=FALSE}
+summary (fit4)
+```
+
+
+### Model evaluation
+
+<h4> Nested ANOVA </h4>
+
+as we have merely `r length(fit4$model)-1` predictor variables, a nested ANOVA, suffices to prove our variables are indeed adding explicative value. As it shows below, 
+
+```{r, echo=FALSE}
+anova(fit1, fit2, fit3, fit4)
+
+```
+
+<h4> Model diagnostics & validation </h4>
+
+Graphically we can examine our normality and homoskedacity assumptions [see graphs 4](#g04). Additionally a validation of components vs residuals can be seen on [graphs 5](#g05)
+
 
 
 # Results
 
+The model as presented by its coefficients is self explanatory:
+
+```{r, echo=FALSE}
+fit4$coefficients
+
+```
+
+Manual transmission cars will put out better mileage app `r round(fit4$coefficients[2],2)`, ceteris paribus. 
 
 
 # Appendix
@@ -104,28 +140,38 @@ If you see [Graph 02](#g02), the risk for muticolinearity (i.e. our predictor ar
 
 <a name="g01"></a>**Graph 1: Scatter matrix, all variables**
 
-```{r, echo=FALSE, cache=TRUE}
+```{r, echo=FALSE, cache=TRUE, dependson="chunkLoad"}
 print(pairsXY)
 
 ```
 
 <a name="g02"></a>**Graph 2: Correlation matrix**
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, dependson="chunkLoad"}
 print(corXY)
 
 ```
 
-<a name="g03"></a>**Graph 3: Singular value decomposition, Variance explained**
+<a name="g03"></a>**Graph 3: Interaction plot am vs  cyl**
 
-```{r, dependson="svdChunk", echo=FALSE}
-# graph for % of variation explained
-par(mfrow = c(1, 2))
-plot(svd1$d, xlab = "Column", ylab = "Singular value", pch = 19)
-plot(svd1$d^2/sum(svd1$d^2), xlab = "Column", ylab = "Prop. of variance explained", 
-     pch = 19)
+```{r, echo=FALSE}
+interaction.plot(data$cyl, data$am, response = data$mpg)
 
 ```
 
+<a name="g04"></a>**Graph 4: Diagnostics plots for model**
 
+```{r, echo=FALSE}
+# par(mfcol = c(2,2))
+plot(fit4)
+
+```
+
+<a name="g05"></a>**Graph 5: Components and Residual plots**
+
+```{r, echo=FALSE,  dependson="chunkLoad"}
+library(car)
+crPlots(model = fit4)
+
+```
 
